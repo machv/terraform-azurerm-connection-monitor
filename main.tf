@@ -13,7 +13,7 @@ locals {
   external_destination_endpoints = { for host in local.all_destinations : local.destination_names[host] => host }
 
   // Test configurations
-  all_tests = flatten([for k, tests in var.test_groups : [for t in tests.test_configurations : merge({ test_configuration_name = lower("${t.protocol}/${t.port} (${k})") }, t)]])
+  all_tests = flatten([for k, tests in var.test_groups : [for t in tests.test_configurations : merge({ test_configuration_name = lower("${t.protocol}${t.port != null ? "/${t.port}" : ""} (${k})") }, t)]])
   tcp_test_configurations = merge(
     { for k, t in var.test_configurations : k => t if t.protocol == "Tcp" },              // globally defined
     { for t in local.all_tests : t.test_configuration_name => t if t.protocol == "Tcp" }, // inline defined
@@ -21,6 +21,10 @@ locals {
   http_test_configurations = merge(
     { for k, t in var.test_configurations : k => t if t.protocol == "Http" },              // globally defined
     { for t in local.all_tests : t.test_configuration_name => t if t.protocol == "Http" }, // inline defined
+  )
+  icmp_test_configurations = merge(
+    { for k, t in var.test_configurations : k => t if t.protocol == "Icmp" },              // globally defined
+    { for t in local.all_tests : t.test_configuration_name => t if t.protocol == "Icmp" }, // inline defined
   )
 }
 
@@ -49,6 +53,24 @@ resource "azurerm_network_connection_monitor" "monitor" {
   }
 
   dynamic "test_configuration" {
+    for_each = local.icmp_test_configurations
+
+    content {
+      name                      = test_configuration.key
+      protocol                  = test_configuration.value.protocol
+      test_frequency_in_seconds = test_configuration.value.test_frequency_in_seconds
+
+      icmp_configuration {
+      }
+
+      success_threshold {
+        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, 0)
+        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, 200)
+      }
+    }
+  }
+
+  dynamic "test_configuration" {
     for_each = local.tcp_test_configurations
 
     content {
@@ -58,6 +80,11 @@ resource "azurerm_network_connection_monitor" "monitor" {
 
       tcp_configuration {
         port = test_configuration.value.port
+      }
+
+      success_threshold {
+        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, 0)
+        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, 200)
       }
     }
   }
@@ -91,7 +118,7 @@ resource "azurerm_network_connection_monitor" "monitor" {
       name                     = test_group.key
       destination_endpoints    = [for host in test_group.value.destinations : local.destination_names[host]]
       source_endpoints         = [for resource_id in test_group.value.sources : local.source_names[resource_id]]
-      test_configuration_names = concat(test_group.value.tests, [for t in test_group.value.test_configurations : lower("${t.protocol}/${t.port} (${test_group.key})")])
+      test_configuration_names = concat(test_group.value.tests, [for t in test_group.value.test_configurations : lower("${t.protocol}${t.port != null ? "/${t.port}" : ""} (${test_group.key})")])
     }
   }
 
