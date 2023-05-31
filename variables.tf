@@ -106,3 +106,15 @@ variable "test_configurations" {
     error_message = "Tcp protocol test requires port to be specified."
   }
 }
+
+variable "default_round_trip_time_ms" {
+  description = "Default threshold for round trip time in test configurations."
+  type        = number
+  default     = 200
+}
+
+variable "default_checks_failed_percent" {
+  description = "Default threshold for failed checks in test configurations."
+  type        = number
+  default     = 0
+}

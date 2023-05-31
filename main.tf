@@ -32,6 +32,7 @@ resource "azurerm_network_connection_monitor" "monitor" {
   name               = var.name
   network_watcher_id = var.network_watcher_id
   location           = var.location
+  tags               = var.tags
 
   dynamic "endpoint" {
     for_each = local.azure_source_endpoints
@@ -64,8 +65,8 @@ resource "azurerm_network_connection_monitor" "monitor" {
       }
 
       success_threshold {
-        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, 0)
-        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, 200)
+        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, var.default_checks_failed_percent)
+        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, var.default_round_trip_time_ms)
       }
     }
   }
@@ -83,8 +84,8 @@ resource "azurerm_network_connection_monitor" "monitor" {
       }
 
       success_threshold {
-        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, 0)
-        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, 200)
+        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, var.default_checks_failed_percent)
+        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, var.default_round_trip_time_ms)
       }
     }
   }
@@ -105,8 +106,8 @@ resource "azurerm_network_connection_monitor" "monitor" {
       }
 
       success_threshold {
-        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, 0)
-        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, 200)
+        checks_failed_percent = try(test_configuration.value.sucess_threshold.checks_failed_percent, var.default_checks_failed_percent)
+        round_trip_time_ms    = try(test_configuration.value.sucess_threshold.round_trip_time_ms, var.default_round_trip_time_ms)
       }
     }
   }
